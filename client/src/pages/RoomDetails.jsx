@@ -17,7 +17,9 @@ const RoomDetail = () => {
 
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  // Đã cập nhật state để lưu trữ { url, list, index }
   const [selectedMedia, setSelectedMedia] = useState(null);
+  const [trustOpen, setTrustOpen] = useState(false);
 
   const calcFinalPrice = (price, discountPercent) => {
     const p = Number(price) || 0;
@@ -29,6 +31,43 @@ const RoomDetail = () => {
     if (isNaN(v)) return "-";
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v);
   };
+
+  // --- LOGIC ĐIỀU HƯỚNG MEDIA TRONG MODAL ---
+  const navigateMedia = (direction) => {
+    if (!selectedMedia || !selectedMedia.list || selectedMedia.list.length < 2) return;
+
+    const currentList = selectedMedia.list;
+    const currentIndex = selectedMedia.index;
+    const newListLength = currentList.length;
+
+    let newIndex;
+    if (direction === 'next') {
+      newIndex = (currentIndex + 1) % newListLength; // Lặp lại về đầu nếu hết danh sách
+    } else if (direction === 'prev') {
+      newIndex = (currentIndex - 1 + newListLength) % newListLength; // Lặp lại về cuối nếu hết danh sách
+    } else {
+      return;
+    }
+
+    const newUrl = currentList[newIndex];
+    setSelectedMedia({
+      url: newUrl,
+      list: currentList,
+      index: newIndex,
+    });
+  };
+
+  const handleNextMedia = (e) => {
+    e.stopPropagation();
+    navigateMedia('next');
+  };
+
+  const handlePrevMedia = (e) => {
+    e.stopPropagation();
+    navigateMedia('prev');
+  };
+  // ---------------------------------------------
+
 
   // Fetch room detail
   useEffect(() => {
@@ -97,6 +136,19 @@ const RoomDetail = () => {
       })
       : "Liên hệ";
 
+  // Hàm tạo đối tượng selectedMedia cho ảnh phòng
+  const openRoomMedia = (url, index) => {
+    setSelectedMedia({
+      url,
+      list: images,
+      index,
+    });
+  };
+
+  // Lấy index của ảnh chính trong danh sách đầy đủ (nếu có)
+  const mainImageIndex = images.indexOf(mainImage);
+
+
   return (
     <div className="pt-28 px-6 md:px-12 lg:px-20 w-full">
       {/* HOTEL NAME */}
@@ -121,29 +173,54 @@ const RoomDetail = () => {
       {/* GALLERY */}
       <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
+          {/* ẢNH CHÍNH: Giữ nguyên kích thước lớn 420px */}
           <img
             src={mainImage}
             alt="main"
-            className="w-full h-[420px] object-cover rounded-xl shadow"
+            className="w-full h-[420px] object-cover rounded-xl shadow cursor-pointer"
+            onClick={() => openRoomMedia(mainImage, mainImageIndex)}
           />
         </div>
         <div className="flex flex-col gap-2">
-          {images.slice(0, 4).map((img, idx) => (
-            <img
-              key={idx}
-              src={img}
-              alt={`thumb-${idx}`}
-              className="w-full h-24 object-cover rounded-md cursor-pointer"
-              onClick={() => setMainImage(img)}
-            />
-          ))}
+          {images.slice(0, 4).map((img, idx) => {
+            const fullIndex = images.indexOf(img); // Lấy index trong mảng images đầy đủ
+            return (
+              // THUMBNAIL GALLERY: Giữ nguyên kích thước 96px (h-24)
+              <img
+                key={idx}
+                src={img}
+                alt={`thumb-${idx}`}
+                className="w-full h-24 object-cover rounded-md cursor-pointer"
+                onClick={() => {
+                  setMainImage(img);
+                  openRoomMedia(img, fullIndex);
+                }}
+              />
+            );
+          })}
         </div>
       </div>
 
-      {/* 🛡️ IMAGE TRUSTWORTHINESS - MỨC ĐỘ TIN TƯỞNG ẢNH */}
-      <div className="mb-8 border-2 border-blue-200 rounded-lg p-6 bg-blue-50">
-        <h3 className="text-lg font-bold text-blue-800 mb-4">🛡️ Kiểm Tra Độ Tin Tưởng Ảnh</h3>
-        <ImageTrustworthiness roomId={id} />
+      {/* 🛡️ IMAGE TRUSTWORTHINESS - MỨC ĐỘ TIN TƯỞNG ẢNH (collapsible) */}
+      <div className="mb-8 border-2 border-blue-200 rounded-lg bg-blue-50">
+        <button
+          onClick={() => setTrustOpen((s) => !s)}
+          aria-expanded={trustOpen}
+          className="w-full p-4 md:p-6 flex items-center justify-between text-left hover:bg-blue-100 transition-colors rounded-lg"
+        >
+          <h3 className="text-lg font-bold text-blue-800">🛡️ Kiểm Tra Độ Tin Tưởng Ảnh</h3>
+          <span className={`inline-block transform transition-transform ${trustOpen ? "rotate-180" : ""}`}>
+            <svg className="w-5 h-5 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </span>
+        </button>
+
+        {trustOpen && (
+          <div className="p-4 md:p-6 border-t border-blue-100">
+            <ImageTrustworthiness roomId={id} />
+          </div>
+        )}
       </div>
 
       {/* TITLE + PRICE */}
@@ -253,15 +330,17 @@ const RoomDetail = () => {
                         <video
                           key={i}
                           src={m}
-                          className="w-40 h-32 rounded-lg shadow object-cover cursor-pointer"
-                          onClick={() => setSelectedMedia(m)}
+                          // ẢNH COMMENT: Đã chuẩn hóa kích thước thành w-32 h-24
+                          className="w-32 h-24 rounded-lg shadow object-cover cursor-pointer"
+                          onClick={() => setSelectedMedia({ url: m, list: c.media, index: i })}
                         />
                       ) : (
                         <img
                           key={i}
                           src={m}
-                          className="w-40 h-32 rounded-lg shadow object-cover cursor-pointer"
-                          onClick={() => setSelectedMedia(m)}
+                          // ẢNH COMMENT: Đã chuẩn hóa kích thước thành w-32 h-24
+                          className="w-32 h-24 rounded-lg shadow object-cover cursor-pointer"
+                          onClick={() => setSelectedMedia({ url: m, list: c.media, index: i })}
                         />
                       )
                     )}
@@ -281,32 +360,61 @@ const RoomDetail = () => {
         />
       </div>
 
-      {/* MEDIA PREVIEW */}
+      {/* MEDIA PREVIEW (PHÓNG TO ẢNH/VIDEO) */}
       {selectedMedia && (
         <div
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedMedia(null)}
         >
-          <div className="relative max-w-4xl max-h-[90vh]">
-            {selectedMedia.endsWith(".mp4") ? (
+          <div
+            className="relative max-w-4xl max-h-[95vh]"
+            // Ngăn chặn việc click vào ảnh/video làm đóng overlay
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Nút Previous (<) */}
+            {selectedMedia.list.length > 1 && (
+              <button
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/30 hover:bg-white/70 p-3 rounded-full text-white z-50 transition-colors hidden md:block"
+                onClick={handlePrevMedia}
+              >
+                <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7"></path>
+                </svg>
+              </button>
+            )}
+
+            {selectedMedia.url.endsWith(".mp4") ? (
               <video
-                src={selectedMedia}
+                src={selectedMedia.url}
                 controls
                 autoPlay
-                className="rounded-xl max-h-[90vh]"
+                className="rounded-xl max-h-[90vh] max-w-full"
               />
             ) : (
               <img
-                src={selectedMedia}
-                className="rounded-xl max-h-[90vh]"
+                src={selectedMedia.url}
+                alt="Media Preview"
+                className="rounded-xl max-h-[90vh] max-w-full object-contain"
               />
             )}
 
+            {/* Nút Next (>) */}
+            {selectedMedia.list.length > 1 && (
+              <button
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/30 hover:bg-white/70 p-3 rounded-full text-white z-50 transition-colors hidden md:block"
+                onClick={handleNextMedia}
+              >
+                <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7"></path>
+                </svg>
+              </button>
+            )}
+
             <button
-              className="absolute top-3 right-3 bg-white/70 hover:bg-white text-black rounded-full px-3 py-1 text-sm font-semibold"
+              className="absolute top-3 right-3 md:right-auto md:left-3 bg-white/70 hover:bg-white text-black rounded-full px-3 py-1 text-sm font-semibold shadow-lg transition-colors z-50"
               onClick={() => setSelectedMedia(null)}
             >
-              ✕
+              ✕ Đóng
             </button>
           </div>
         </div>
