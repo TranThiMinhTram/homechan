@@ -159,6 +159,40 @@ router.patch('/users/:id/status', authenticateToken, requireAdmin, async (req, r
     }
 });
 
+// Toggle trạng thái user
+router.patch('/users/:id/toggle', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Không cho phép vô hiệu hóa chính mình
+        if (id === req.user.id) {
+            return res.status(400).json({ message: 'Không thể thay đổi trạng thái chính mình' });
+        }
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: 'User không tồn tại' });
+        }
+
+        // Toggle trạng thái
+        user.isActive = !user.isActive;
+        await user.save();
+
+        res.json({
+            success: true,
+            message: `${user.isActive ? 'Kích hoạt' : 'Vô hiệu hóa'} người dùng thành công`,
+            user: {
+                _id: user._id,
+                username: user.username,
+                isActive: user.isActive
+            }
+        });
+    } catch (error) {
+        console.error('Toggle user status error:', error);
+        res.status(500).json({ success: false, message: 'Lỗi khi cập nhật trạng thái người dùng' });
+    }
+});
+
 
 
 // Lấy danh sách tất cả hotels

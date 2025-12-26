@@ -295,14 +295,26 @@ const Listroom = () => {
         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
           <div className="flex gap-2 items-center">
             <button
-              onClick={() => openEditModal(hotel)}
+              onClick={() => {
+                if (!hotel.isActive) {
+                  toast.error("Khách sạn bị vô hiệu hoá");
+                  return;
+                }
+                openEditModal(hotel);
+              }}
               className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
               title="Chỉnh sửa"
             >
               <FaEdit size={14} />
             </button>
             <button
-              onClick={() => openDeleteModal(hotel)}
+              onClick={() => {
+                if (!hotel.isActive) {
+                  toast.error("Khách sạn bị vô hiệu hoá");
+                  return;
+                }
+                openDeleteModal(hotel);
+              }}
               className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
               title="Xóa"
             >
@@ -354,14 +366,26 @@ const Listroom = () => {
             <div className="flex flex-col items-end gap-3 ml-4">
               <div className="flex gap-2">
                 <button
-                  onClick={() => openEditModal(hotel)}
+                  onClick={() => {
+                    if (!hotel.isActive) {
+                      toast.error("Khách sạn bị vô hiệu hoá");
+                      return;
+                    }
+                    openEditModal(hotel);
+                  }}
                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
                   title="Chỉnh sửa"
                 >
                   <FaEdit size={14} />
                 </button>
                 <button
-                  onClick={() => openDeleteModal(hotel)}
+                  onClick={() => {
+                    if (!hotel.isActive) {
+                      toast.error("Khách sạn bị vô hiệu hoá");
+                      return;
+                    }
+                    openDeleteModal(hotel);
+                  }}
                   className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
                   title="Xóa"
                 >
@@ -919,7 +943,7 @@ const Listroom = () => {
   return (
     <div className="p-6 bg-gradient-to-br from-indigo-50 to-white min-h-screen">
       <Title
-        title="🏨 Quản lý phòng"
+        title="🏨 Quản lý Khách sạn và phòng"
         subTitle="Thêm khách sạn mới hoặc quản lý các phòng thuộc khách sạn của bạn."
         align="left"
       />

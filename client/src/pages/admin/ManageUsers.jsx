@@ -12,11 +12,15 @@ const ManageUsers = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [showModal, setShowModal] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
     const [modalMode, setModalMode] = useState('create');
     const [selectedUser, setSelectedUser] = useState(null);
     const [formData, setFormData] = useState({
         username: '',
+        fullname: '',
         email: '',
+        phone: '',
+        address: '',
         password: '',
         role: 'user'
     });
@@ -110,6 +114,32 @@ const ManageUsers = () => {
         }
     };
 
+    const handleToggleUserStatus = async (userId) => {
+        try {
+            const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+
+            const response = await fetch(`/api/admin/users/${userId}/toggle`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                Swal.fire('Thành công!', data.message, 'success');
+                fetchUsers(currentPage, searchTerm, roleFilter);
+            } else {
+                const errorData = await response.json();
+                Swal.fire('Lỗi!', errorData.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error toggling user status:', error);
+            Swal.fire('Lỗi!', 'Không thể cập nhật trạng thái người dùng.', 'error');
+        }
+    };
+
     const handleSubmitUser = async (e) => {
         e.preventDefault();
 
@@ -154,7 +184,10 @@ const ManageUsers = () => {
     const resetForm = () => {
         setFormData({
             username: '',
+            fullname: '',
             email: '',
+            phone: '',
+            address: '',
             password: '',
             role: 'user'
         });
@@ -174,7 +207,10 @@ const ManageUsers = () => {
         setSelectedUser(user);
         setFormData({
             username: user.username,
+            fullname: user.fullname,
             email: user.email,
+            phone: user.phone,
+            address: user.address,
             password: '',
             role: user.role
         });
@@ -183,19 +219,35 @@ const ManageUsers = () => {
 
 
     useEffect(() => {
-        fetchUsers(currentPage, searchTerm, roleFilter);
-    }, [currentPage, searchTerm, roleFilter]);
+        if (!hasSearched) {
+            fetchUsers(currentPage, '', 'all');
+        } else {
+            fetchUsers(currentPage, searchTerm, roleFilter);
+        }
+    }, [currentPage]);
 
 
     const handleSearch = (e) => {
-        setSearchTerm(e.target.value);
+        const newSearchTerm = e.target.value;
+        setSearchTerm(newSearchTerm);
         setCurrentPage(1);
+        setHasSearched(true);
+        fetchUsers(1, newSearchTerm, roleFilter);
     };
 
 
     const handleRoleFilter = (e) => {
-        setRoleFilter(e.target.value);
+        const newRole = e.target.value;
+        setRoleFilter(newRole);
         setCurrentPage(1);
+        setHasSearched(true);
+        fetchUsers(1, searchTerm, newRole);
+    };
+
+    const handleSearchSubmit = () => {
+        setHasSearched(true);
+        setCurrentPage(1);
+        fetchUsers(1, searchTerm, roleFilter);
     };
 
     return (
@@ -212,28 +264,70 @@ const ManageUsers = () => {
             </div>
 
 
-            <div className="mb-6 flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                    <input
-                        type="text"
-                        placeholder="Tìm kiếm theo tên, email..."
-                        value={searchTerm}
-                        onChange={handleSearch}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                </div>
-                <div className="w-full md:w-48">
-                    <select
-                        value={roleFilter}
-                        onChange={handleRoleFilter}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            <div className="mb-6 flex flex-col gap-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1">
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm theo tên, email..."
+                            value={searchTerm}
+                            onChange={handleSearch}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                    <button
+                        onClick={handleSearchSubmit}
+                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
-                        <option value="all">Tất cả vai trò</option>
-                        <option value="user">Người dùng</option>
-                        <option value="hotelOwner">Chủ khách sạn</option>
-                        <option value="admin">Quản trị viên</option>
-                    </select>
+                        Tìm kiếm
+                    </button>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={() => handleRoleFilter({ target: { value: 'all' } })}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                            roleFilter === 'all'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                    >
+                        Tất cả vai trò
+                    </button>
+                    <button
+                        onClick={() => handleRoleFilter({ target: { value: 'user' } })}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                            roleFilter === 'user'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                    >
+                        Người dùng
+                    </button>
+                    <button
+                        onClick={() => handleRoleFilter({ target: { value: 'hotelOwner' } })}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                            roleFilter === 'hotelOwner'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                    >
+                        Chủ khách sạn
+                    </button>
+                    <button
+                        onClick={() => handleRoleFilter({ target: { value: 'admin' } })}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                            roleFilter === 'admin'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                    >
+                        Quản trị viên
+                    </button>
+                </div>
+            </div>
+
+            <div className="mb-4 flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-gray-800">Danh sách người dùng</h2>
                 <button
                     onClick={openCreateModal}
                     className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -241,7 +335,6 @@ const ManageUsers = () => {
                     Thêm người dùng
                 </button>
             </div>
-
 
             {loading ? (
                 <div className="flex justify-center items-center py-12">
@@ -309,18 +402,41 @@ const ManageUsers = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <button
-                                                    onClick={() => openEditModal(user)}
-                                                    className="text-blue-600 hover:text-blue-900 mr-3"
-                                                >
-                                                    Sửa
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteUser(user._id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Xóa
-                                                </button>
+                                                <div className="flex items-center space-x-2">
+                                                    <button
+                                                        onClick={() => openEditModal(user)}
+                                                        className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                                                        title="Sửa"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleToggleUserStatus(user._id)}
+                                                        className={`p-1 rounded ${user.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
+                                                        title={user.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'}
+                                                    >
+                                                        {user.isActive ? (
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-12.728 12.728m0 0L5 5m13.364 10.364L5 5" />
+                                                            </svg>
+                                                        ) : (
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteUser(user._id)}
+                                                        className="text-red-600 hover:text-red-900 p-1 rounded"
+                                                        title="Xóa"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -328,6 +444,15 @@ const ManageUsers = () => {
                             </table>
                         </div>
                     </div>
+
+                    {/* Total Count */}
+                    {users.length > 0 && (
+                        <div className="flex justify-end mt-4">
+                            <p className="text-sm text-gray-600">
+                                Tổng cộng người dùng: <span className="font-semibold">{total}</span>
+                            </p>
+                        </div>
+                    )}
 
                     {/* Pagination */}
                     {totalPages > 1 && (
@@ -391,6 +516,19 @@ const ManageUsers = () => {
 
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Họ và tên
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.fullname}
+                                    onChange={(e) => setFormData({ ...formData, fullname: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                    required
+                                />
+                            </div>
+
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Email
                                 </label>
                                 <input
@@ -404,16 +542,44 @@ const ManageUsers = () => {
 
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Mật khẩu {modalMode === 'edit' && '(để trống nếu không đổi)'}
+                                    Số điện thoại
                                 </label>
                                 <input
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    type="tel"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                                    required={modalMode === 'create'}
+                                    required
                                 />
                             </div>
+
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Địa chỉ
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.address}
+                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                    required
+                                />
+                            </div>
+
+                            {modalMode === 'create' && (
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Mật khẩu
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                                        required
+                                    />
+                                </div>
+                            )}
 
                             <div className="mb-6">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">

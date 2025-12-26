@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart3, Users, Building2, Calendar } from 'lucide-react';
+import { BarChart3, Users, Building2, Calendar, Percent } from 'lucide-react';
 
 const Sidebar = () => {
     const navItems = [
@@ -24,6 +24,11 @@ const Sidebar = () => {
             path: '/admin/bookings',
             icon: Calendar,
             label: 'Tất cả booking'
+        },
+        {
+            path: '/admin/manage-discounts',
+            icon: Percent,
+            label: 'Quản lý mã giảm giá'
         }
     ];
 

@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import Hotel from '../models/Hotel.js';
 import Booking from '../models/Booking.js';
+import bcrypt from 'bcryptjs';
 
 //Lấy thống kê tổng quan:
 export const getDashboardStats = async (req, res) => {
@@ -33,17 +34,31 @@ export const getDashboardStats = async (req, res) => {
 //Lấy danh sách user với phân trang
 export const getAllUsers = async (req, res) => {
     try {
-        const { page = 1, limit = 10, search = '' } = req.query;
+        const { page = 1, limit = 10, search = '', role = 'all' } = req.query;
         const skip = (page - 1) * limit;
 
         let query = {};
+
+        // Add role filter
+        if (role !== 'all') {
+            query.role = role;
+        }
+
+        // Add search filter
         if (search) {
-            query = {
+            const searchQuery = {
                 $or: [
                     { username: { $regex: search, $options: 'i' } },
                     { email: { $regex: search, $options: 'i' } }
                 ]
             };
+
+            if (query.role) {
+                // If role filter exists, combine with search
+                query = { $and: [query, searchQuery] };
+            } else {
+                query = searchQuery;
+            }
         }
 
         const users = await User.find(query)
@@ -73,7 +88,7 @@ export const getAllUsers = async (req, res) => {
 
 export const createUser = async (req, res) => {
     try {
-        const { name, email, password, role = 'user' } = req.body;
+        const { username, fullname, email, phone, address, password, role = 'user' } = req.body;
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -83,10 +98,17 @@ export const createUser = async (req, res) => {
             });
         }
 
+        // Hash password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
         const newUser = new User({
-            name,
+            username,
+            fullname,
             email,
-            password,
+            phone,
+            address,
+            password: hashedPassword,
             role,
             isActive: true
         });
@@ -98,8 +120,11 @@ export const createUser = async (req, res) => {
             message: 'Tạo người dùng thành công',
             user: {
                 _id: newUser._id,
-                name: newUser.name,
+                username: newUser.username,
+                fullname: newUser.fullname,
                 email: newUser.email,
+                phone: newUser.phone,
+                address: newUser.address,
                 role: newUser.role,
                 isActive: newUser.isActive
             }
@@ -117,12 +142,19 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, role, isActive } = req.body;
+        const { username, fullname, email, phone, address, password, role } = req.body;
+
+        const updateData = { username, fullname, email, phone, address, role };
+
+        // Only update password if provided
+        if (password && password.trim() !== '') {
+            updateData.password = password;
+        }
 
         const user = await User.findByIdAndUpdate(
             id,
-            { name, email, role, isActive },
-            { new: true, runValidators: true }
+            updateData,
+            { new: true }
         ).select('-password');
 
         if (!user) {
@@ -168,6 +200,41 @@ export const deleteUser = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Lỗi khi xóa người dùng',
+            error: error.message
+        });
+    }
+};
+
+export const toggleUserStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy người dùng'
+            });
+        }
+
+        // Toggle trạng thái
+        user.isActive = !user.isActive;
+        await user.save();
+
+        res.json({
+            success: true,
+            message: `${user.isActive ? 'Kích hoạt' : 'Vô hiệu hóa'} người dùng thành công`,
+            user: {
+                _id: user._id,
+                username: user.username,
+                isActive: user.isActive
+            }
+        });
+    } catch (error) {
+        console.error('Error toggling user status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi cập nhật trạng thái người dùng',
             error: error.message
         });
     }

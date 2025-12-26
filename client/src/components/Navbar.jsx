@@ -92,7 +92,10 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showRegConfirmation, setShowRegConfirmation] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchInput, setShowSearchInput] = useState(false);
   const dropdownRef = useRef();
+  const searchRef = useRef();
 
   const { user, isOwner, navigate, axios, setIsOwner, setUser } =
     useAppContext();
@@ -113,6 +116,9 @@ const Navbar = () => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowDropdown(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSearchInput(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -141,6 +147,26 @@ const Navbar = () => {
   const handleRegClick = () => {
     if (isOwner) navigate("/owner");
     else setShowRegConfirmation(true);
+  };
+
+  // Xử lý click vào icon tìm kiếm
+  const handleSearchIconClick = () => {
+    if (showSearchInput && searchQuery.trim()) {
+      // Nếu input đang hiển thị và có nội dung, thực hiện tìm kiếm
+      handleSearch();
+    } else {
+      // Nếu không, hiển thị input
+      setShowSearchInput(!showSearchInput);
+    }
+  };
+
+  // Thực hiện tìm kiếm
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/rooms?destination=${encodeURIComponent(searchQuery.trim())}`);
+      setShowSearchInput(false);
+      setSearchQuery("");
+    }
   };
 
   return (
@@ -209,11 +235,31 @@ const Navbar = () => {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-5 relative">
-            <img
-              src={assets.searchIcon}
-              alt="search"
-              className={`h-6 ${showLightHeader && "invert"} cursor-pointer`}
-            />
+            <div className="relative" ref={searchRef}>
+              {showSearchInput && (
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  placeholder="Tìm kiếm khách sạn..."
+                  className={`px-3 py-1 rounded-full text-sm transition-all duration-300 ${
+                    showLightHeader
+                      ? "bg-gray-100 text-gray-800 border border-gray-300"
+                      : "bg-white/20 text-white placeholder-white/70 border border-white/30"
+                  } focus:outline-none focus:ring-2 focus:ring-cyan-400`}
+                  autoFocus
+                />
+              )}
+              <img
+                src={assets.searchIcon}
+                alt="search"
+                onClick={handleSearchIconClick}
+                className={`h-6 ${showLightHeader && "invert"} cursor-pointer transition-all duration-300 ${
+                  showSearchInput ? "ml-2" : ""
+                }`}
+              />
+            </div>
 
             {user?.external ? (
               <UserButton>

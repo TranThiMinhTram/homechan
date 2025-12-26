@@ -17,6 +17,7 @@ import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import favoriteRouter from "./routes/favoriteRoutes.js";
 import imageRoutes from "./routes/imageRoutes.js";
+import discountRouter from "./routes/discountRoutes.js";
 
 connectDB()
 connectCloudinary()
@@ -40,6 +41,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/favorites', favoriteRouter);
 app.use("/api/image", imageRoutes);
+app.use('/api/discounts', discountRouter);
 
 app.get('/api/rooms/optimal-price', async (req, res) => {
     try {

@@ -7,8 +7,9 @@ const Sidebar = () => {
     const sidebarLinks = [
         { name: "Bảng điều khiển", path: "/owner", icon: assets.dashboardIcon },
         // { name: "Thêm phòng", path: "/owner/add-room", icon: assets.addIcon },
-        { name: "Danh sách phòng", path: "/owner/list-room", icon: assets.listIcon },
+        { name: "Quản lý Khách sạn", path: "/owner/list-room", icon: assets.listIcon },
         { name: "Quản lý booking", path: "/owner/manage-bookings", icon: assets.listIcon },
+        { name: "Quản lý mã giảm giá", path: "/owner/manage-discounts", icon: assets.badgeIcon },
     ]
 
     return (

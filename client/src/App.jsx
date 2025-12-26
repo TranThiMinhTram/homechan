@@ -15,6 +15,7 @@ import { Toaster } from 'react-hot-toast';
 import { useAppContext } from './conext/AppContext';
 import Addroom from './pages/hotelOwner/AddRoom';
 import ManageBookings from './pages/hotelOwner/ManageBookings';
+import ManageDiscounts from './pages/hotelOwner/ManageDiscounts';
 import About from './components/About';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -23,6 +24,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageHotels from './pages/admin/ManageHotels';
 import AllBookings from './pages/admin/AllBookings';
+import AdminManageDiscounts from './pages/admin/ManageDiscounts';
 import HotelsList from './pages/HotelsList';
 import HotelDetail from './pages/HotelDetail';
 import BookingPage from "./pages/BookingPage"
@@ -63,6 +65,7 @@ const App = () => {
             <Route path="add-room" element={<Addroom />} />
             <Route path="list-room" element={<Listroom />} />
             <Route path="manage-bookings" element={<ManageBookings />} />
+            <Route path="manage-discounts" element={<ManageDiscounts />} />
           </Route>
 
           {/* Admin routes */}
@@ -73,6 +76,7 @@ const App = () => {
             <Route path="manage-users" element={<ManageUsers />} />
             <Route path="manage-hotels" element={<ManageHotels />} />
             <Route path="bookings" element={<AllBookings />} />
+            <Route path="manage-discounts" element={<AdminManageDiscounts />} />
           </Route>
 
           <Route path='/gioi-thieu' element={<About />} />

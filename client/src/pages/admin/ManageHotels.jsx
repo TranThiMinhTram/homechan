@@ -11,6 +11,7 @@ const ManageHotels = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
     const [search, setSearch] = useState('');
+    const [searchInput, setSearchInput] = useState('');
 
     const fetchHotels = async (page = 1, searchTerm = '') => {
         try {
@@ -55,9 +56,12 @@ const ManageHotels = () => {
         fetchHotels(currentPage, search);
     }, [currentPage, search]);
 
-    const handleSearch = (e) => {
-        const value = e.target.value;
-        setSearch(value);
+    const handleSearchInput = (e) => {
+        setSearchInput(e.target.value);
+    };
+
+    const handleSearchClick = () => {
+        setSearch(searchInput);
         setCurrentPage(1);
     };
 
@@ -194,13 +198,18 @@ const ManageHotels = () => {
                 <div className="flex flex-col md:flex-row gap-4 items-center">
                     <div className="flex-1">
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">🔍</span>
+                            <button
+                                onClick={handleSearchClick}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors text-xl cursor-pointer"
+                            >
+                                🔍
+                            </button>
                             <input
                                 type="text"
                                 placeholder="Tìm kiếm theo tên khách sạn..."
-                                value={search}
-                                onChange={handleSearch}
-                                className="pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full text-gray-700"
+                                value={searchInput}
+                                onChange={handleSearchInput}
+                                className="pr-12 pl-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full text-gray-700"
                             />
                         </div>
                     </div>

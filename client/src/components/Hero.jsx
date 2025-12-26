@@ -6,22 +6,11 @@ import { useAppContext } from '../conext/AppContext'
 const Hero = () => {
   const { navigate, getToken, axios, setSearchedCities } = useAppContext()
   const [destination, setDestination] = useState("")
-  const [suggestions, setSuggestions] = useState([])
 
-  const handleInputChange = async (e) => {
+  const handleInputChange = (e) => {
     const value = e.target.value
     setDestination(value)
-    if (value.length > 2) {
-      try {
-        const res = await axios.get(`/api/hotels/search?keyword=${value}`)
-        setSuggestions(res.data)
-      } catch (err) {
-        console.error("Lỗi khi tìm kiếm khách sạn:", err)
-        setSuggestions([])
-      }
-    } else {
-      setSuggestions([])
-    }
+    // Removed real-time search suggestions
   }
 
   const [showGuestDropdown, setShowGuestDropdown] = useState(false)
@@ -102,42 +91,20 @@ const Hero = () => {
         </p>
 
         <form
-          onSubmit={onSearch}
           className="mt-10 w-full max-w-5xl grid grid-cols-1 md:grid-cols-5 gap-4 bg-white/10 backdrop-blur-lg border border-white/20 p-6 rounded-2xl shadow-lg"
         >
           <div className="flex flex-col text-sm">
             <label className="text-white mb-1 font-semibold">🌆 Chọn điểm đến</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={destination}
-                onChange={handleInputChange}
-                placeholder="Nhập tên khách sạn hoặc địa điểm..."
-                required
-                className="px-4 py-2.5 rounded-lg bg-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition w-full"
-              />
+            <input
+              type="text"
+              value={destination}
+              onChange={handleInputChange}
+              placeholder="Nhập tên khách sạn hoặc địa điểm..."
+              required
+              className="px-4 py-2.5 rounded-lg bg-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition w-full"
+            />
 
-              {suggestions.length > 0 && (
-                <ul className="absolute z-50 bg-white text-gray-800 rounded-lg shadow-lg mt-1 w-full max-h-48 overflow-y-auto">
-                  {suggestions.map((hotel, idx) => (
-                    <li
-                      key={idx}
-                      onClick={() => {
-                        setDestination(hotel.name || hotel)
-                        setSuggestions([])
-                      }}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                    >
-                      {hotel.name || hotel}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
 
-            <datalist id="destinations">
-              {cities.map((city, i) => <option key={i} value={city} />)}
-            </datalist>
           </div>
 
           <div className="flex flex-col text-sm">
@@ -227,7 +194,8 @@ const Hero = () => {
           </div>
 
           <button
-            type="submit"
+            type="button"
+            onClick={onSearch}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-black to-zinc-800 text-white font-semibold rounded-lg hover:from-zinc-900 hover:to-black transition-all duration-300 shadow-lg"
           >
             <img src={assets.searchIcon} alt="search" className="w-5 h-5" />

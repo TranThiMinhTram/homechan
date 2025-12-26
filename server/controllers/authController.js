@@ -105,6 +105,10 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Tài khoản không tồn tại" });
     }
 
+    if (!user.isActive) {
+      return res.status(403).json({ message: "Tài khoản bị vô hiệu hoá" });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Mật khẩu không đúng" });

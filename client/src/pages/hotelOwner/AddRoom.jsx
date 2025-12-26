@@ -218,9 +218,9 @@ const Addroom = () => {
     }
   })
 
-  // Auto-suggest price when room type is selected
+  // Auto-suggest price when all required fields are filled
   useEffect(() => {
-    if (inputs.roomType) {
+    if (inputs.roomType && inputs.roomArea && inputs.maxAdults && inputs.maxChildren) {
       try {
         const result = suggestRoomPrice(inputs);
         setInputs(prev => ({
@@ -233,7 +233,7 @@ const Addroom = () => {
         toast.error('Lỗi khi gợi ý giá AI');
       }
     }
-  }, [inputs.roomType])
+  }, [inputs.roomType, inputs.roomArea, inputs.maxAdults, inputs.maxChildren])
 
   // ----- Image handlers -----
   const handleDrop = (e) => {
